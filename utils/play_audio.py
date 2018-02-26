@@ -22,13 +22,60 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
 
-
+import os
 import subprocess
 
-def play_audio_from_file(parent, file_path):
+import logging
+_logger = logging.getLogger('aeiou-activity')
+
+
+GST_PATHS = ['/usr/bin/gst-launch', '/bin/gst-launch',
+             '/usr/local/bin/gst-launch',
+             '/usr/bin/gst-launch-1.0', '/bin/gst-launch-1.0',
+             '/usr/local/bin/gst-launch-1.0',
+             '/usr/bin/gst-launch-0.10', '/bin/gst-launch-0.10',
+             '/usr/local/bin/gst-launch-0.10']
+
+
+def play_audio_from_file(file_path):
     """ Audio media """
-    command_line = ['gst-launch', 'filesrc', 'location=' + file_path,
-                    '! oggdemux', '! vorbisdec', '! audioconvert',
-                    '! alsasink']
-    subprocess.call(command_line)
+
+    if not hasattr(play_audio_from_file, 'gst_launch'):
+        for path in GST_PATHS:
+            if os.path.exists(path):
+                play_audio_from_file.gst_launch = path
+                _logger.debug(path)
+                break
+
+    if not hasattr(play_audio_from_file, 'gst_launch'):
+        _logger.debug('gst-launch not found')
+        return
+
+    command_line = [play_audio_from_file.gst_launch, 'filesrc',
+                    'location=' + file_path, '! oggdemux', '! vorbisdec',
+                    '! audioconvert', '! alsasink']
+    check_output(command_line, 'unable to play audio file %s' % (file_path))
+
+
+def check_output(command, warning):
+    ''' Workaround for old systems without subprocess.check_output'''
+    if hasattr(subprocess, 'check_output'):
+        try:
+            output = subprocess.check_output(command)
+        except subprocess.CalledProcessError:
+            _logger.warning(warning)
+            return None
+    else:
+        import commands
+
+        cmd = ''
+        for c in command:
+            cmd += c
+            cmd += ' '
+        (status, output) = commands.getstatusoutput(cmd)
+        if status != 0:
+            _logger.warning(warning)
+            return None
+    return output
+
 
