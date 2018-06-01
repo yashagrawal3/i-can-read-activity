@@ -11,31 +11,31 @@
 # Boston, MA 02111-1307, USA.
 
 
-import gtk
 
-from sugar.activity import activity
-try:
-    from sugar.graphics.toolbarbox import ToolbarBox, ToolbarButton
-    _HAVE_TOOLBOX = True
-except ImportError:
-    _HAVE_TOOLBOX = False
+import gi
+gi.require_version('Gtk','3.0')
 
-if _HAVE_TOOLBOX:
-    from sugar.activity.widgets import ActivityToolbarButton
-    from sugar.activity.widgets import StopButton
+from gi.repository import Gtk
+from gi.repository import Gdk
 
-from sugar.graphics.toolbutton import ToolButton
-from sugar.graphics.combobox import ComboBox
-from sugar.graphics.toolcombobox import ToolComboBox
-from sugar.datastore import datastore
-from sugar import profile
+from sugar3.activity import activity
+from sugar3.graphics.toolbarbox import ToolbarBox
+from sugar3.activity.widgets import ActivityToolbarButton
+from sugar3.activity.widgets import StopButton
+from sugar3.activity.widgets import ToolButton
+
+from sugar3.graphics.toolbarbox import ToolbarButton
+from sugar3.graphics.combobox import ComboBox
+from sugar3.graphics.toolcombobox import ToolComboBox
+from sugar3.datastore import datastore
+from sugar3 import profile
 
 from gettext import gettext as _
 import os.path
 
 from page import Page
 from utils.grecord import Grecord
-from utils.play_audio import play_audio_from_file
+from utils.gplay import play_audio_from_file
 
 SERVICE = 'org.sugarlabs.ICanReadActivity'
 IFACE = SERVICE
@@ -64,10 +64,10 @@ def _button_factory(icon_name, tooltip, callback, toolbar, cb_arg=None,
 
 def _label_factory(label, toolbar):
     ''' Factory for adding a label to a toolbar '''
-    my_label = gtk.Label(label)
+    my_label = Gtk.Label(label)
     my_label.set_line_wrap(True)
     my_label.show()
-    toolitem = gtk.ToolItem()
+    toolitem = Gtk.ToolItem()
     toolitem.add(my_label)
     toolbar.insert(toolitem, -1)
     toolitem.show()
@@ -92,7 +92,7 @@ def _combo_factory(options, tooltip, toolbar, callback, default=0):
 
 def _separator_factory(toolbar, visible=True, expand=False):
     ''' Factory for adding a separator to a toolbar '''
-    separator = gtk.SeparatorToolItem()
+    separator = Gtk.SeparatorToolItem()
     separator.props.draw = visible
     separator.set_expand(expand)
     toolbar.insert(separator, -1)
@@ -101,18 +101,18 @@ def _separator_factory(toolbar, visible=True, expand=False):
 
 def chooser(parent_window, filter, action):
     ''' Choose an object from the datastore and take some action '''
-    from sugar.graphics.objectchooser import ObjectChooser
+    from sugar3.graphics.objectchooser import ObjectChooser
 
     _chooser = None
     try:
         _chooser = ObjectChooser(parent=parent_window, what_filter=filter)
     except TypeError:
         _chooser = ObjectChooser(None, parent_window,
-            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT)
+            Gtk.DIALOG_MODAL | Gtk.DIALOG_DESTROY_WITH_PARENT)
     if _chooser is not None:
         try:
             result = _chooser.run()
-            if result == gtk.RESPONSE_ACCEPT:
+            if result == Gtk.ResponseType.ACCEPT:
                 dsobject = _chooser.get_selected_object()
                 action(dsobject)
                 dsobject.destroy()
@@ -143,25 +143,33 @@ class ICanReadActivity(activity.Activity):
         # FIXME: find some reasonable default situation
         language = 'es'
 
-        if os.path.exists(os.path.join('~', 'Activities', 'ICanRead.activity')):
-            self._lessons_path = os.path.join('~', 'Activities',
-                                              'ICanRead.activity',
-                                              'lessons', language)
-        else:
-            self._lessons_path = os.path.join('.', 'lessons', language)
+#        if os.path.exists(os.path.join('~', 'Activities', 'ICanRead.activity')):
+#            self._lessons_path = os.path.join('~', 'Activities',
+#                                              'ICanRead.activity',
+#                                              'lessons', language)
+#        else:
+#            self._lessons_path = os.path.join('.', 'lessons', language)
+#
+#        self._images_path = self._lessons_path.replace('lessons', 'images')
+#        self._sounds_path = self._lessons_path.replace('lessons', 'sounds')
+        self.activity_path = activity.get_bundle_path()
 
-        self._images_path = self._lessons_path.replace('lessons', 'images')
-        self._sounds_path = self._lessons_path.replace('lessons', 'sounds')
+        self._lessons_path = os.path.join(self.activity_path,
+                                          'lessons', language)
+        self._images_path = os.path.join(self.activity_path,
+                                          'images', language)
+        self._sounds_path = os.path.join(self.activity_path,
+                                          'sounds', language)
         self._setup_toolbars()
 
         # Create a canvas
-        self.scrolled_window = gtk.ScrolledWindow()
+        self.scrolled_window = Gtk.ScrolledWindow()
         self.set_canvas(self.scrolled_window)
-        self.scrolled_window.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
+        self.scrolled_window.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         self.scrolled_window.show()
-        canvas = gtk.DrawingArea()
-        width = gtk.gdk.screen_width()
-        height = int(gtk.gdk.screen_height() * 2.75)
+        canvas = Gtk.DrawingArea()
+        width = Gdk.Screen.width()
+        height = int(Gdk.Screen.height()*2.75)
         canvas.set_size_request(width, height)
         self.scrolled_window.add_with_viewport(canvas)
         canvas.show()
@@ -185,56 +193,32 @@ class ICanReadActivity(activity.Activity):
 
     def _setup_toolbars(self):
         ''' Setup the toolbars.. '''
-
         # no sharing
         self.max_participants = 1
+        toolbox = ToolbarBox()
 
-        if _HAVE_TOOLBOX:
-            toolbox = ToolbarBox()
+        # Activity toolbar
+        activity_button = ActivityToolbarButton(self)
 
-            # Activity toolbar
-            activity_button = ActivityToolbarButton(self)
+        toolbox.toolbar.insert(activity_button, 0)
+        activity_button.show()
 
-            toolbox.toolbar.insert(activity_button, 0)
-            activity_button.show()
+        lesson_toolbar = Gtk.Toolbar()
+        lesson_toolbar_button = ToolbarButton(label=_('Select a lesson'),
+                                            page=lesson_toolbar,
+                                            icon_name='text-x-generic')
+        record_toolbar = Gtk.Toolbar()
+        record_toolbar_button = ToolbarButton(label=_('Record a sound'),
+                                            page=record_toolbar,
+                                            icon_name='media-audio')
 
-            lesson_toolbar = gtk.Toolbar()
-            lesson_toolbar_button = ToolbarButton(label=_('Select a lesson'),
-                                                page=lesson_toolbar,
-                                                icon_name='text-x-generic')
-            record_toolbar = gtk.Toolbar()
-            record_toolbar_button = ToolbarButton(label=_('Record a sound'),
-                                                page=record_toolbar,
-                                                icon_name='media-audio')
-
-            self.set_toolbar_box(toolbox)
-            toolbox.show()
-            lesson_toolbar_button.show()
-            toolbox.toolbar.insert(lesson_toolbar_button, -1)
-            record_toolbar_button.show()
-            toolbox.toolbar.insert(record_toolbar_button, -1)
-            primary_toolbar = toolbox.toolbar
-
-        else:
-            # Use pre-0.86 toolbar design
-            primary_toolbar = gtk.Toolbar()
-            lesson_toolbar = gtk.Toolbar()
-            record_toolbar = gtk.Toolbar()
-            toolbox = activity.ActivityToolbox(self)
-            self.set_toolbox(toolbox)
-            toolbox.add_toolbar(_('Page'), primary_toolbar)
-            toolbox.show()
-            toolbox.add_toolbar(_('Lesson'), lesson_toolbar)
-            toolbox.show()
-            toolbox.add_toolbar(_('Record'), record_toolbar)
-            toolbox.show()
-            toolbox.set_current_toolbar(1)
-
-            # no sharing
-            if hasattr(toolbox, 'share'):
-                toolbox.share.hide()
-            elif hasattr(toolbox, 'props'):
-                toolbox.props.visible = False
+        self.set_toolbar_box(toolbox)
+        toolbox.show()
+        lesson_toolbar_button.show()
+        toolbox.toolbar.insert(lesson_toolbar_button, -1)
+        record_toolbar_button.show()
+        toolbox.toolbar.insert(record_toolbar_button, -1)
+        primary_toolbar = toolbox.toolbar
 
         _label_factory(_('Select a lesson') + ':', lesson_toolbar)
         self._levels = self._get_levels(self._lessons_path)
@@ -305,13 +289,11 @@ class ICanReadActivity(activity.Activity):
 
         self.status = _label_factory('', primary_toolbar)
 
-        if _HAVE_TOOLBOX:
-            _separator_factory(toolbox.toolbar, False, True)
-
-            stop_button = StopButton(self)
-            stop_button.props.accelerator = '<Ctrl>q'
-            toolbox.toolbar.insert(stop_button, -1)
-            stop_button.show()
+        _separator_factory(toolbox.toolbar, False, True)
+        stop_button = StopButton(self)
+        stop_button.props.accelerator = '<Ctrl>q'
+        toolbox.toolbar.insert(stop_button, -1)
+        stop_button.show()
         lesson_toolbar.show()
         record_toolbar.show()
 

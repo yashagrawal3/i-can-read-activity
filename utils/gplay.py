@@ -27,7 +27,7 @@ import os
 import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gst', '1.0')
-
+gi.require_version('GstVideo', '1.0')
 from gi.repository import Gtk
 from gi.repository import Gst
 from gi.repository import Gdk
@@ -37,7 +37,6 @@ GObject.threads_init()
 Gst.init(None)
 
 
-from tautils import error_output, debug_output
 
 
 def play_audio_from_file(lc, file_path):
@@ -131,15 +130,12 @@ class Gplay():
         self._want_document = True
 
     def _player_eos_cb(self, widget):
-        debug_output('end of stream', self.running_sugar)
         # Make sure player is stopped after EOS
         self.player.stop()
 
     def _player_error_cb(self, widget, message, detail):
         self.player.stop()
         self.player.set_uri(None)
-        error_output('Error: %s - %s' % (message, detail),
-                     self.running_sugar)
 
     def _player_stream_info_cb(self, widget, stream_info):
         if not len(stream_info) or self.got_stream_info:
@@ -170,15 +166,11 @@ class Gplay():
 
         try:
             if not self.currentplaying:
-                debug_output('Playing: %s' % (self.playlist[0]),
-                             self.running_sugar)
                 self.player.set_uri(self.playlist[0])
                 self.currentplaying = 0
                 self.play_toggled()
         except Exception as e:
-            error_output('Error playing %s: %s' % (self.playlist[0], e),
-                         self.running_sugar)
-        return False
+            return False
 
     def play_toggled(self):
         if self.player.is_playing():
@@ -230,8 +222,6 @@ class GstPlayer(GObject.GObject):
         t = message.type
         if t == Gst.MessageType.ERROR:
             err, debug = message.parse_error()
-            error_output('Error: %s - %s' % (err, debug),
-                         self.running_sugar)
             self.error = True
             self.emit('eos')
             self.playing = False
@@ -285,18 +275,15 @@ class GstPlayer(GObject.GObject):
     def pause(self):
         self.player.set_state(Gst.State.PAUSED)
         self.playing = False
-        # debug_output('pausing player', self.running_sugar)
 
     def play(self):
         self.player.set_state(Gst.State.PLAYING)
         self.playing = True
         self.error = False
-        # debug_output('playing player', self.running_sugar)
 
     def stop(self):
         self.player.set_state(Gst.State.NULL)
         self.playing = False
-        # debug_output('stopped player', self.running_sugar)
 
     def get_state(self, timeout=1):
         return self.player.get_state(timeout=timeout)
