@@ -61,7 +61,7 @@ stroke:#000000;%s\">" % (font_size, self._stroke, align)
         svg_string = "<line x1=\"%f\" y1=\"%f\" x2=\"%f\" y2=\"%f\"\n" % \
                       (x1, y1, x2, y2)
         svg_string += self._svg_style("stroke-linecap:square;")
-        return svg_string
+        return str(svg_string)
 
     def _svg_rect(self, w, h, rx, ry, x, y, stroke=False):
         svg_string = "       <rect\n"
@@ -73,7 +73,7 @@ stroke:#000000;%s\">" % (font_size, self._stroke, align)
         svg_string += "          y=\"%f\"\n" % (y)
         self.set_stroke_width(1.0)
         svg_string += self._svg_style(stroke=stroke)
-        return svg_string
+        return str(svg_string)
 
     def _background(self, scale, stroke=False):
         return self._svg_rect(79.5 * scale, 59.5 * scale, 1, 1, 0.25, 0.25,
@@ -96,12 +96,12 @@ stroke:#000000;%s\">" % (font_size, self._stroke, align)
                                       ",0,0)\">\n")
         if background:
             svg_string += self._background(scale, stroke=stroke)
-        return svg_string
+        return str(svg_string)
 
     def footer(self):
         svg_string = "</g>\n"
         svg_string += "</svg>\n"
-        return svg_string
+        return str(svg_string)
 
     def set_scale(self, scale=1.0):
         self._scale = scale
@@ -128,7 +128,7 @@ def generate_card(string='a', colors=['#FF0000', '#FFFFFF'],
     svg_string += svg._svg_text(x, 45, font_size, string, stroke=stroke,
                                     center=center)
     svg_string += svg.footer()
-    return svg_string
+    return str(svg_string)
 
 
 def open_file(datapath, filename):
@@ -154,7 +154,7 @@ def genblank(w, h, colors, stroke_width=1.0):
     svg.set_stroke_width(stroke_width)
     svg_string = svg.header(int(w / 80), int(h / 60))
     svg_string += svg.footer()
-    return svg_string
+    return str(svg_string)
 
 
 def main():
