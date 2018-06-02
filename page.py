@@ -110,19 +110,8 @@ class Page():
         
         self._my_canvas.set_layer(0)
         
-        # self._my_gc = self._my_canvas.images[0].new_gc()
-        # self._my_gc.set_foreground(
-        #     self._my_gc.get_colormap().alloc_color('#FFFFFF'))
-        
         cairosurf = cairo.ImageSurface(cairo.FORMAT_ARGB32, int(self._width), int(self._height * 2.75))
         self.cr = cairo.Context(cairosurf)
-        # self.cr = self._canvas.window.cairo_create()
-
-        # # Restrict Cairo to the exposed area; avoid extra work
-        # cr.rectangle(event.area.x, event.area.y,
-        #         event.area.width, event.area.height)
-        # cr.clip()
-
 
         for c in ALPHABET:
             self._letters.append(Sprite(self._sprites, 0, 0,
@@ -550,18 +539,6 @@ class Page():
                         play_audio_from_file(self, os.path.join(
                                 self._sounds_path,
                                 self._media_data[self.page][1]))
-                    '''
-                    elif os.path.exists(os.path.join(
-                            os.path.abspath('.'), 'videos',
-                            self._media_data[self.page])):
-                        play_movie_from_file(self, os.path.join(
-                                os.path.abspath('.'), 'videos',
-                                self._media_data[self.page]),
-                                self._width - 320 * self._scale / 2.5,
-                                          GRID_CELL_SIZE + 15 * self._scale,
-                                             80 * self._scale,
-                                             60 * self._scale)
-                    '''
 
     def _keypress_cb(self, area, event):
         ''' No keyboard shortcuts at the moment. Perhaps jump to the page
@@ -573,37 +550,9 @@ class Page():
         self._sprites.redraw_sprites(cr=cr)
         return True
 
-    def _expose_cb(self, win, event):
-        ''' Callback to handle window expose events '''
-        self.do_expose_event(event)
-        return True
-
-    # Handle the expose-event by drawing
-    def do_expose_event(self, event):
-
-        # Create the cairo context
-        cr = self._canvas.window.cairo_create()
-
-        # Restrict Cairo to the exposed area; avoid extra work
-        cr.rectangle(event.area.x, event.area.y,
-                event.area.width, event.area.height)
-        cr.clip()
-
-        # Refresh sprite list
-        self._sprites.redraw_sprites(cr=cr)
-
     def _destroy_cb(self, win, event):
         ''' Make a clean exit. '''
         gtk.main_quit()
-
-    def invalt(self, x, y, w, h):
-        ''' Mark a region for refresh '''
-        rectangle = Gdk.Rectangle()
-        rectangle.x = int(x)
-        rectangle.y = int(y)
-        rectangle.width = int(w)
-        rectangle.height = int(h)
-        self._canvas.window.invalidate_rect(rectangle)
 
 
     def load_level(self, path):
