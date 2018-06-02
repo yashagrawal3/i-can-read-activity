@@ -49,12 +49,13 @@ class SVG:
         if stroke:
             svg_string += "style=\"font-size:%dpx;font-weight:bold;font-family:Sans;fill:%s;\
 stroke:#000000;%s\">" % (font_size, self._stroke, align)
+
         else:
             svg_string += "style=\"font-size:%dpx;font-weight:bold;font-family:Sans;fill:%s;\
 %s\">" % (font_size, self._stroke, align)
         svg_string += "<tspan x=\"%d\" y=\"%d\">%s</tspan></text>" % \
-            (x, y, text_string)
-        return svg_string
+            (x, y, text_string) 
+        return str(svg_string)
 
     def _svg_line(self, x1, y1, x2, y2):
         svg_string = "<line x1=\"%f\" y1=\"%f\" x2=\"%f\" y2=\"%f\"\n" % \

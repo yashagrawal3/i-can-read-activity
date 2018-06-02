@@ -74,7 +74,7 @@ class Page():
         self._canvas.set_can_focus(True)       
         self._canvas.add_events(Gdk.EventMask.KEY_PRESS_MASK)
         self._canvas.add_events(Gdk.EventMask.KEY_RELEASE_MASK)
-        self._canvas.connect("draw", self._draw_cb)
+        self._canvas.connect("draw", self.__draw_cb)
         self._canvas.connect("button-press-event", self._button_press_cb)
         self._canvas.connect("button-release-event", self._button_release_cb)
         self._canvas.connect("key_press_event", self._keypress_cb)
@@ -113,9 +113,15 @@ class Page():
         # self._my_gc = self._my_canvas.images[0].new_gc()
         # self._my_gc.set_foreground(
         #     self._my_gc.get_colormap().alloc_color('#FFFFFF'))
+        
         cairosurf = cairo.ImageSurface(cairo.FORMAT_ARGB32, int(self._width), int(self._height * 2.75))
         self.cr = cairo.Context(cairosurf)
+        # self.cr = self._canvas.window.cairo_create()
 
+        # # Restrict Cairo to the exposed area; avoid extra work
+        # cr.rectangle(event.area.x, event.area.y,
+        #         event.area.width, event.area.height)
+        # cr.clip()
 
 
         for c in ALPHABET:
@@ -140,7 +146,7 @@ class Page():
 
         cr.rectangle(0, 0, self._width, int(self._height * 2.75))
         cr.fill()
-        self.invalt(0, 0, self._width, self._height)
+        # self.invalt(0, 0, self._width, self._height)
         self._my_canvas.set_layer(1)
 
         self._x_pos, self._y_pos = self._margin, 0
@@ -290,11 +296,11 @@ class Page():
         self._cards[self.page].set_layer(2)
 
         self._x_pos = self._margin
-        self._y_pos = self._cards[self.page].rect.y + \
+        self._y_pos = self._cards[self.page].rect[1]+ \
                       self._cards[self.page].images[0].get_height() + self._lead
-        cr.rectangle(0, 0, self._width, int(self._height * 2.75))
-        cr.fill()
-        self.invalt(0, 0, self._width, int(self._height * 2.5))
+        self.cr.rectangle(0, 0, self._width, int(self._height * 2.75))
+        self.cr.fill()
+        # self.invalt(0, 0, self._width, int(self._height * 2.5))
 
         text = self._card_data[self.page][1]
         '''
@@ -360,7 +366,7 @@ class Page():
 
         cr.rectangle(0, 0, self._width, int(self._height * 2.75))
         cr.fill()
-        self.invalt(0, 0, self._width, self._height)
+        # self.invalt(0, 0, self._width, self._height)
         self._my_canvas.set_layer(1)
 
         my_list = self._word_data[self.page].split('/')
@@ -382,7 +388,7 @@ class Page():
         self._clear_all()
         cr.rectangle(0, 0, self._width, int(self._height * 2.75))
         cr.fill()
-        self.invalt(0, 0, self._width, self._height)
+        # self.invalt(0, 0, self._width, self._height)
         self._my_canvas.set_layer(1)
 
         phrase_list = self._test_data.split('/')
@@ -489,11 +495,9 @@ class Page():
 
     def _draw_pixbuf(self, pixbuf, x, y, canvas, cr):
         ''' Draw a pixbuf onto the canvas '''
-        bounds = self.get_allocation()
-
         cr.rectangle(0, 0, int(x), int(y))
         cr.fill()
-        self.invalt(x, y, bounds.width, bounds.height)
+        # self.invalt(x, y, bounds.width, bounds.height)
 
     def _increment_xy(self, y):
         ''' Increment the xy postion for drawing the next phrase, with
@@ -564,10 +568,29 @@ class Page():
         associated with the key pressed? '''
         return True
 
-    def _draw_cb(self, win, event):
+    def __draw_cb(self, win, event):
         ''' When asked, we need to refresh the screen. '''
         self._sprites.redraw_sprites()
         return True
+
+    def _expose_cb(self, win, event):
+        ''' Callback to handle window expose events '''
+        self.do_expose_event(event)
+        return True
+
+    # Handle the expose-event by drawing
+    def do_expose_event(self, event):
+
+        # Create the cairo context
+        cr = self._canvas.window.cairo_create()
+
+        # Restrict Cairo to the exposed area; avoid extra work
+        cr.rectangle(event.area.x, event.area.y,
+                event.area.width, event.area.height)
+        cr.clip()
+
+        # Refresh sprite list
+        self._sprites.redraw_sprites(cr=cr)
 
     def _destroy_cb(self, win, event):
         ''' Make a clean exit. '''
@@ -580,7 +603,8 @@ class Page():
         rectangle.y = int(y)
         rectangle.width = int(w)
         rectangle.height = int(h)
-        self._canvas.window.invalidate_rect(rectangle, False)
+        self._canvas.window.invalidate_rect(rectangle)
+
 
     def load_level(self, path):
         ''' Load a level (CSV) from path: letter, word, color, image,
@@ -630,7 +654,6 @@ class Page():
 def svg_str_to_pixbuf(svg_string):
     ''' Load pixbuf from SVG string. '''
     pl = GdkPixbuf.PixbufLoader.new_with_type('svg')
-    print(type(svg_string))
     pl.write(svg_string)
     pl.close()
     pixbuf = pl.get_pixbuf()
