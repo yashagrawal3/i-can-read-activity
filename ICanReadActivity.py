@@ -269,7 +269,7 @@ class ICanReadActivity(activity.Activity):
             primary_toolbar)
 
         self._prev_page_button = _button_factory(
-            'previous-letter-insensitive', _('Previous letter'),
+            'previous-letter', _('Previous letter'),
             self._prev_page_cb, primary_toolbar)
 
         self._next_page_button = _button_factory(
@@ -352,13 +352,13 @@ class ICanReadActivity(activity.Activity):
         if self._page.page > 0:
             self._page.page -= 1
         if self._page.page == 0:
-            self._prev_page_button.set_icon('previous-letter-insensitive')
+            self._prev_page_button.set_icon_name('previous-letter')
         self._page.new_page()
         self.reading = False
         self.testing = False
-        self._read_button.set_icon('read')
+        self._read_button.set_icon_name('read')
         self._read_button.set_tooltip(_('Show letter'))
-        self._test_button.set_icon('go-right')
+        self._test_button.set_icon_name('go-right')
         self._test_button.set_tooltip(_('Self test'))
 
     def _next_page_cb(self, button=None):
@@ -367,10 +367,10 @@ class ICanReadActivity(activity.Activity):
         self._page.new_page()
         self.reading = False
         self.testing = False
-        self._read_button.set_icon('read')
+        self._read_button.set_icon_name('read')
         self._read_button.set_tooltip(_('Show letter'))
-        self._prev_page_button.set_icon('previous-letter')
-        self._test_button.set_icon('go-right')
+        self._prev_page_button.set_icon_name('previous-letter')
+        self._test_button.set_icon_name('go-right')
         self._test_button.set_tooltip(_('Self test'))
 
     def _read_cb(self, button=None):
@@ -379,17 +379,17 @@ class ICanReadActivity(activity.Activity):
             self.reading = True
             self.testing = False
             self._page.read()
-            self._read_button.set_icon('listen')
+            self._read_button.set_icon_name('listen')
             self._read_button.set_tooltip(_('Show letter'))
-            self._test_button.set_icon('go-right')
+            self._test_button.set_icon_name('go-right')
             self._test_button.set_tooltip(_('Self test'))
         else:
             self.reading = False
             self.testing = False
             self._page.reload()
-            self._read_button.set_icon('read')
+            self._read_button.set_icon_name('read')
             self._read_button.set_tooltip(_('Read the sounds one at a time'))
-            self._test_button.set_icon('go-right')
+            self._test_button.set_icon_name('go-right')
             self._test_button.set_tooltip(_('Self test'))
 
     def _test_cb(self, button=None):
@@ -397,12 +397,12 @@ class ICanReadActivity(activity.Activity):
         if not self.testing:
             self.testing = True
             self._page.test()
-            self._test_button.set_icon('go-left')
+            self._test_button.set_icon_name('go-left')
             self._test_button.set_tooltip(_('Return to reading'))
         else:
             self.testing = False
             self._page.reload()
-            self._test_button.set_icon('go-right')
+            self._test_button.set_icon_name('go-right')
             self._test_button.set_tooltip(_('Self test'))
 
     def write_file(self, file_path):
@@ -468,16 +468,16 @@ class ICanReadActivity(activity.Activity):
         if self.recording:
             self.grecord.stop_recording_audio()
             self.recording = False
-            self._record_lesson_button.set_icon('media-record')
+            self._record_lesson_button.set_icon_name('media-record')
             self._record_lesson_button.set_tooltip(_('Start recording'))
-            self._playback_button.set_icon('media-playback-start')
+            self._playback_button.set_icon_name('media-playback-start')
             self._playback_button.set_tooltip(_('Play recording'))
-            self._save_recording_button.set_icon('sound-save')
+            self._save_recording_button.set_icon_name('sound-save')
             self._save_recording_button.set_tooltip(_('Save recording'))
         else:
             self.grecord.record_audio()
             self.recording = True
-            self._record_lesson_button.set_icon('media-recording')
+            self._record_lesson_button.set_icon_name('media-recording')
             self._record_lesson_button.set_tooltip(_('Stop recording'))
 
     def _playback_recording_cb(self, button=None):

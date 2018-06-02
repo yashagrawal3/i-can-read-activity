@@ -364,8 +364,8 @@ class Page():
         ''' Read a word list '''
         self._clear_all()
 
-        cr.rectangle(0, 0, self._width, int(self._height * 2.75))
-        cr.fill()
+        self.cr.rectangle(0, 0, self._width, int(self._height * 2.75))
+        self.cr.fill()
         # self.invalt(0, 0, self._width, self._height)
         self._my_canvas.set_layer(1)
 
@@ -568,9 +568,9 @@ class Page():
         associated with the key pressed? '''
         return True
 
-    def __draw_cb(self, win, event):
+    def __draw_cb(self, canvas, cr):
         ''' When asked, we need to refresh the screen. '''
-        self._sprites.redraw_sprites()
+        self._sprites.redraw_sprites(cr=cr)
         return True
 
     def _expose_cb(self, win, event):
